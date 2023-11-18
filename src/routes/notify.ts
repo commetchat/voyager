@@ -30,6 +30,7 @@ export default {
 			switch (type) {
 				case "fcm":
 					await this.notifyFcm(eventId, roomId, key, env)
+					break;
 				case "unified_push":
 					await this.notifyUnifiedPush(eventId, roomId, key)
 					break;
