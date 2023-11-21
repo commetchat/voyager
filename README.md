@@ -19,7 +19,7 @@
 This service is built as a Cloudflare Worker. Check out [this guide](https://developers.cloudflare.com/workers/get-started/guide/) if you are unfamiliar.
 
 # API
-Voyager is compatable with both, Unified Push and Firebase Cloud Messaging. To maintain compatability with other Unified Push <-> Matrix gateways, it is assumed that by default a request uses Unified Push, unles Firebase is specified.
+Voyager is compatable with both, Unified Push and Firebase Cloud Messaging. To maintain compatability with other Unified Push <-> Matrix gateways, it is assumed that by default a request uses Unified Push, unless Firebase is specified.
 
 ### Request to homeserver to register using FCM
 Note the addition of `"type": "fcm"` to specify that this uses Firebase
