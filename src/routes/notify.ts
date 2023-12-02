@@ -3,20 +3,25 @@ import { Buffer } from "buffer";
 // @ts-ignore
 import { getTokenFromGCPServiceAccount } from "@sagi.io/workers-jwt";
 
+interface PushGatewayResponse {
+	rejected: string[]
+};
 
 export default {
-	async notify(request: Request, env: Env) {
+	async notify(request: Request, env: Env): Promise<any> {
 		var content: any = await request.json()
-		console.log(content)
 		var notification = content['notification']
 
 		var eventId = notification['event_id']
 		var roomId = notification['room_id']
 		var devices = notification['devices']
 
+		var response: PushGatewayResponse = {
+			rejected: []
+		}
+
 		for (var index in devices) {
 			let device = devices[index]
-			console.log(device)
 
 			var type = "unified_push";
 			if ("data" in device) {
@@ -26,20 +31,30 @@ export default {
 			}
 
 			let key = device['pushkey']
-			console.log(type);
+			var result: PushGatewayResponse
+
 			switch (type) {
 				case "fcm":
-					await this.notifyFcm(eventId, roomId, key, env)
+					result = await this.notifyFcm(eventId, roomId, key, env)
 					break;
 				case "unified_push":
-					await this.notifyUnifiedPush(eventId, roomId, key)
+					result = await this.notifyUnifiedPush(eventId, roomId, key)
 					break;
+				default:
+					result = {
+						rejected: []
+					}
 			}
+
+			result.rejected.forEach(element => {
+				response.rejected.push(element);
+			});
 		}
+
+		return response
 	},
 
-	async notifyUnifiedPush(eventId: string, roomId: string, pushKey: string) {
-		console.log("Notifying unified push");
+	async notifyUnifiedPush(eventId: string, roomId: string, pushKey: string): Promise<PushGatewayResponse> {
 		var content = {
 			"notification": {
 				"event_id": eventId,
@@ -55,16 +70,12 @@ export default {
 			body: JSON.stringify(content)
 		})
 
-		console.log(result)
-
-		console.log({
-			event: eventId,
-			pushKey: pushKey,
-			room: roomId,
-		});
+		return {
+			rejected: []
+		}
 	},
 
-	async notifyFcm(eventId: string, roomId: string, userKey: string, env: Env) {
+	async notifyFcm(eventId: string, roomId: string, userKey: string, env: Env): Promise<PushGatewayResponse> {
 		const decode = (str: string): string => Buffer.from(str, 'base64').toString('binary')
 		var keyData = JSON.parse(decode(env.FIREBASE_KEY_B64));
 
@@ -112,6 +123,14 @@ export default {
 				})
 			})).json()
 
-		console.log(response)
+		var result: PushGatewayResponse = {
+			rejected: []
+		}
+
+		if ('error' in response) {
+			result.rejected.push(userKey)
+		}
+
+		return result;
 	}
 };
