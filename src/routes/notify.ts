@@ -55,6 +55,26 @@ export default {
 	},
 
 	async notifyUnifiedPush(eventId: string, roomId: string, pushKey: string): Promise<PushGatewayResponse> {
+
+		var returnValue: PushGatewayResponse = {
+			rejected: []
+		}
+
+		var url: URL;
+		try {
+			url = new URL(pushKey);
+		} catch {
+			console.log("Invalid url for unified push")
+			returnValue.rejected.push(pushKey)
+			return returnValue;
+		}
+
+		if (url.protocol != "https:") {
+			console.log("Unified push key protocol was not https")
+			returnValue.rejected.push(pushKey)
+			return returnValue
+		}
+
 		var content = {
 			"notification": {
 				"event_id": eventId,
@@ -70,9 +90,11 @@ export default {
 			body: JSON.stringify(content)
 		})
 
-		return {
-			rejected: []
+		if (result.status != 200) {
+			returnValue.rejected.push(pushKey)
 		}
+
+		return returnValue
 	},
 
 	async notifyFcm(eventId: string, roomId: string, userKey: string, env: Env): Promise<PushGatewayResponse> {
